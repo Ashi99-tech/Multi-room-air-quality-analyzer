@@ -155,4 +155,4 @@ Each line in the `.jsonl` file (e.g., `Room1.jsonl`) should look like:
 
 ## 📜 License
 
-MIT License © 2025 Your Name / Team
+MIT License © 2025 Ashini Rupasinghe
