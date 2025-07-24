@@ -1,0 +1,500 @@
+[1mdiff --git a/.env b/.env[m
+[1mnew file mode 100644[m
+[1mindex 0000000..0cf8d02[m
+[1m--- /dev/null[m
+[1m+++ b/.env[m
+[36m@@ -0,0 +1 @@[m
+[32m+[m[32mOPENAI_API_KEY= " "[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/__pycache__/agent.cpython-312.pyc b/backend/__pycache__/agent.cpython-312.pyc[m
+[1mnew file mode 100644[m
+[1mindex 0000000..5ac3c49[m
+Binary files /dev/null and b/backend/__pycache__/agent.cpython-312.pyc differ
+[1mdiff --git a/backend/__pycache__/main.cpython-312.pyc b/backend/__pycache__/main.cpython-312.pyc[m
+[1mnew file mode 100644[m
+[1mindex 0000000..9c48ea4[m
+Binary files /dev/null and b/backend/__pycache__/main.cpython-312.pyc differ
+[1mdiff --git a/backend/main.py b/backend/main.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..4f82284[m
+[1m--- /dev/null[m
+[1m+++ b/backend/main.py[m
+[36m@@ -0,0 +1,361 @@[m
+[32m+[m[32mfrom fastapi import FastAPI[m
+[32m+[m[32mfrom pydantic import BaseModel[m
+[32m+[m[32mfrom fastapi.middleware.cors import CORSMiddleware[m
+[32m+[m[32mimport pandas as pd[m
+[32m+[m[32mimport os[m
+[32m+[m[32mimport json[m
+[32m+[m[32mimport openai[m
+[32m+[m[32mfrom dotenv import load_dotenv[m
+[32m+[m[32mimport re[m
+[32m+[m[32mfrom datetime import datetime, timedelta[m
+[32m+[m
+[32m+[m[32m# Load OpenAI key[m
+[32m+[m[32mload_dotenv()[m
+[32m+[m[32mopenai.api_key = os.getenv("OPENAI_API_KEY")[m
+[32m+[m
+[32m+[m[32mapp = FastAPI()[m
+[32m+[m
+[32m+[m[32m# Enable CORS[m
+[32m+[m[32mapp.add_middleware([m
+[32m+[m[32m    CORSMiddleware,[m
+[32m+[m[32m    allow_origins=["*"],[m
+[32m+[m[32m    allow_credentials=True,[m
+[32m+[m[32m    allow_methods=["*"],[m
+[32m+[m[32m    allow_headers=["*"],[m
+[32m+[m[32m)[m
+[32m+[m
+[32m+[m[32mclass Query(BaseModel):[m
+[32m+[m[32m    question: str[m
+[32m+[m[32m    return_tables: bool = False  # Optional flag, default False[m
+[32m+[m
+[32m+[m[32mdef load_sensor_data():[m
+[32m+[m[32m    folder = os.path.join(os.path.dirname(__file__), "sensor_data")[m
+[32m+[m[32m    all_data = [][m
+[32m+[m[32m    try:[m
+[32m+[m[32m        files = os.listdir(folder)[m
+[32m+[m[32m        print(f"Files found in sensor_data folder: {files}")[m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        print(f"Error reading folder: {e}")[m
+[32m+[m[32m        return pd.DataFrame()[m
+[32m+[m
+[32m+[m[32m    rooms_found = [][m
+[32m+[m[32m    for filename in files:[m
+[32m+[m[32m        if filename.endswith(".ndjson"):[m
+[32m+[m[32m            if "Room" in filename:[m
+[32m+[m[32m                room_match = re.search(r'Room\s*(\d+)', filename)[m
+[32m+[m[32m                if room_match:[m
+[32m+[m[32m                    room = f"Room {room_match.group(1)}"[m
+[32m+[m[32m                else:[m
+[32m+[m[32m                    room = filename.replace(".ndjson", "").replace("_", " ").strip().title()[m
+[32m+[m[32m            else:[m
+[32m+[m[32m                room_raw = filename.replace(".ndjson", "")[m
+[32m+[m[32m                room = room_raw.replace("_", " ").replace("-", " ")[m
+[32m+[m[32m                room = re.sub(r"(\d+)", r" \1", room).strip().title()[m
+[32m+[m[32m            rooms_found.append(room)[m
+[32m+[m
+[32m+[m[32m            file_path = os.path.join(folder, filename)[m
+[32m+[m[32m            try:[m
+[32m+[m[32m                with open(file_path, "r") as f:[m
+[32m+[m[32m                    for line in f:[m
+[32m+[m[32m                        try:[m
+[32m+[m[32m                            record = json.loads(line.strip())[m
+[32m+[m[32m                            data = {[m
+[32m+[m[32m                                "timestamp": record.get("timestamp"),[m
+[32m+[m[32m                                "co2": record.get("CO2 (ppm)") or record.get("co2") or record.get("CO2"),[m
+[32m+[m[32m                                "temperature": record.get("Temperature (°C)") or record.get("temperature") or record.get("temp") or record.get("Temp"),[m
+[32m+[m[32m                                "humidity": record.get("Relative Humidity (%)") or record.get("humidity") or record.get("rh") or record.get("RH"),[m
+[32m+[m[32m                                "room": room[m
+[32m+[m[32m                            }[m
+[32m+[m[32m                            all_data.append(data)[m
+[32m+[m[32m                        except Exception as e:[m
+[32m+[m[32m                            print(f"Error parsing line in {filename}: {e}")[m
+[32m+[m[32m                            continue[m
+[32m+[m[32m            except Exception as e:[m
+[32m+[m[32m                print(f"Error reading file {file_path}: {e}")[m
+[32m+[m[32m                continue[m
+[32m+[m
+[32m+[m[32m    print(f"Rooms detected during load: {set(rooms_found)}")[m
+[32m+[m
+[32m+[m[32m    df = pd.DataFrame(all_data)[m
+[32m+[m[32m    if not df.empty:[m
+[32m+[m[32m        print(f"Rooms detected in DataFrame: {df['room'].unique()}")[m
+[32m+[m[32m    else:[m
+[32m+[m[32m        print("No data loaded into DataFrame.")[m
+[32m+[m
+[32m+[m[32m    if 'timestamp' in df.columns and 'room' in df.columns:[m
+[32m+[m[32m        df['room'] = df['room'].astype(str).str.strip().str.title()[m
+[32m+[m[32m        df = df.dropna(subset=['timestamp', 'room'])[m
+[32m+[m[32m    return df[m
+[32m+[m
+[32m+[m[32mdef df_to_markdown_table(df, col_names):[m
+[32m+[m[32m    if df.empty:[m
+[32m+[m[32m        return "No data available"[m
+[32m+[m[41m    [m
+[32m+[m[32m    header = "| " + " | ".join(col_names) + " |"[m
+[32m+[m[32m    separator = "| " + " | ".join(["---"] * len(col_names)) + " |"[m
+[32m+[m[32m    rows = [][m
+[32m+[m[32m    for _, row in df.iterrows():[m
+[32m+[m[32m        formatted_row = [][m
+[32m+[m[32m        for val in row:[m
+[32m+[m[32m            if pd.isna(val):[m
+[32m+[m[32m                formatted_row.append("N/A")[m
+[32m+[m[32m            elif isinstance(val, (int, float)):[m
+[32m+[m[32m                formatted_row.append(f"{val:.2f}" if isinstance(val, float) else str(val))[m
+[32m+[m[32m            else:[m
+[32m+[m[32m                formatted_row.append(str(val))[m
+[32m+[m[32m        rows.append(f"| {' | '.join(formatted_row)} |")[m
+[32m+[m[32m    return "\n".join([header, separator] + rows)[m
+[32m+[m
+[32m+[m[32mdef generate_comprehensive_analysis(df):[m
+[32m+[m[32m    """Generate comprehensive data analysis with multiple perspectives"""[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Ensure timestamp is datetime[m
+[32m+[m[32m    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')[m
+[32m+[m
+[32m+[m[32m    # Time-based analysis[m
+[32m+[m[32m    df['hour'] = df['timestamp'].dt.hour[m
+[32m+[m[32m    df['day_of_week'] = df['timestamp'].dt.day_name()[m
+[32m+[m[32m    df['date'] = df['timestamp'].dt.date[m
+[32m+[m[32m    df['time_of_day'] = pd.cut(df['hour'],[m[41m [m
+[32m+[m[32m                              bins=[0, 6, 12, 18, 24],[m[41m [m
+[32m+[m[32m                              labels=['Night (0-6h)', 'Morning (6-12h)', 'Afternoon (12-18h)', 'Evening (18-24h)'],[m
+[32m+[m[32m                              include_lowest=True)[m
+[32m+[m[41m    [m
+[32m+[m[32m    day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][m
+[32m+[m[32m    df['day_of_week'] = pd.Categorical(df['day_of_week'], categories=day_order, ordered=True)[m
+[32m+[m[41m    [m
+[32m+[m[32m    rooms = df['room'].unique().tolist()[m
+[32m+[m[32m    room_count = len(rooms)[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Data quality assessment[m
+[32m+[m[32m    data_points_per_room = df.groupby('room').size()[m
+[32m+[m[32m    date_range = f"{df['timestamp'].min().strftime('%Y-%m-%d %H:%M')} to {df['timestamp'].max().strftime('%Y-%m-%d %H:%M')}"[m
+[32m+[m[32m    total_hours = (df['timestamp'].max() - df['timestamp'].min()).total_seconds() / 3600[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Basic statistics[m
+[32m+[m[32m    room_stats = df.groupby('room').agg({[m
+[32m+[m[32m        'temperature': ['mean', 'max', 'min', 'std'],[m
+[32m+[m[32m        'co2': ['mean', 'max', 'min', 'std'],[m
+[32m+[m[32m        'humidity': ['mean', 'max', 'min', 'std'][m
+[32m+[m[32m    }).round(2)[m
+[32m+[m[32m    room_stats.columns = ['_'.join(col) for col in room_stats.columns][m
+[32m+[m[32m    room_stats.reset_index(inplace=True)[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Time-based patterns[m
+[32m+[m[32m    hourly_patterns = df.groupby(['room', 'hour']).agg({[m
+[32m+[m[32m        'temperature': 'mean',[m
+[32m+[m[32m        'co2': 'mean',[m
+[32m+[m[32m        'humidity': 'mean'[m
+[32m+[m[32m    }).round(2).reset_index()[m
+[32m+[m[41m    [m
+[32m+[m[32m    daily_patterns = df.groupby(['room', 'day_of_week'], observed=True).agg({[m
+[32m+[m[32m        'temperature': 'mean',[m
+[32m+[m[32m        'co2': 'mean',[m
+[32m+[m[32m        'humidity': 'mean'[m
+[32m+[m[32m    }).round(2).reset_index()[m
+[32m+[m[41m    [m
+[32m+[m[32m    time_of_day_patterns = df.groupby(['room', 'time_of_day'], observed=True).agg({[m
+[32m+[m[32m        'temperature': 'mean',[m
+[32m+[m[32m        'co2': 'mean',[m
+[32m+[m[32m        'humidity': 'mean'[m
+[32m+[m[32m    }).round(2).reset_index()[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Air quality assessment[m
+[32m+[m[32m    co2_quality = df.copy()[m
+[32m+[m[32m    co2_quality['air_quality'] = pd.cut(co2_quality['co2'],[m[41m [m
+[32m+[m[32m                                       bins=[0, 400, 800, 1200, float('inf')],[m[41m [m
+[32m+[m[32m                                       labels=['Excellent (<400)', 'Good (400-800)', 'Moderate (800-1200)', 'Poor (>1200)'])[m
+[32m+[m[41m    [m
+[32m+[m[32m    air_quality_distribution = co2_quality.groupby(['room', 'air_quality'], observed=True).size().unstack(fill_value=0)[m
+[32m+[m[32m    air_quality_percentage = air_quality_distribution.div(air_quality_distribution.sum(axis=1), axis=0) * 100[m
+[32m+[m[32m    air_quality_percentage = air_quality_percentage.round(1).reset_index()[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Anomaly detection[m
+[32m+[m[32m    anomalies = [][m
+[32m+[m[32m    for room in rooms:[m
+[32m+[m[32m        room_data = df[df['room'] == room][m
+[32m+[m[41m        [m
+[32m+[m[32m        # Temperature anomalies (outside typical comfort range)[m
+[32m+[m[32m        temp_anomalies = room_data[(room_data['temperature'] < 18) | (room_data['temperature'] > 26)][m
+[32m+[m[32m        if len(temp_anomalies) > 0:[m
+[32m+[m[32m            anomalies.append(f"{room}: {len(temp_anomalies)} temperature readings outside comfort range (18-26°C)")[m
+[32m+[m[41m        [m
+[32m+[m[32m        # CO2 anomalies (very high levels)[m
+[32m+[m[32m        co2_anomalies = room_data[room_data['co2'] > 1200][m
+[32m+[m[32m        if len(co2_anomalies) > 0:[m
+[32m+[m[32m            anomalies.append(f"{room}: {len(co2_anomalies)} readings with poor air quality (CO2 > 1200ppm)")[m
+[32m+[m[41m        [m
+[32m+[m[32m        # Humidity anomalies (outside optimal range)[m
+[32m+[m[32m        humidity_anomalies = room_data[(room_data['humidity'] < 30) | (room_data['humidity'] > 70)][m
+[32m+[m[32m        if len(humidity_anomalies) > 0:[m
+[32m+[m[32m            anomalies.append(f"{room}: {len(humidity_anomalies)} humidity readings outside optimal range (30-70%)")[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Room comparisons[m
+[32m+[m[32m    room_rankings = {[m
+[32m+[m[32m        'warmest': room_stats.loc[room_stats['temperature_mean'].idxmax(), 'room'],[m
+[32m+[m[32m        'coolest': room_stats.loc[room_stats['temperature_mean'].idxmin(), 'room'],[m
+[32m+[m[32m        'highest_co2': room_stats.loc[room_stats['co2_mean'].idxmax(), 'room'],[m
+[32m+[m[32m        'lowest_co2': room_stats.loc[room_stats['co2_mean'].idxmin(), 'room'],[m
+[32m+[m[32m        'most_humid': room_stats.loc[room_stats['humidity_mean'].idxmax(), 'room'],[m
+[32m+[m[32m        'least_humid': room_stats.loc[room_stats['humidity_mean'].idxmin(), 'room'][m
+[32m+[m[32m    }[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Recent trends (last 24 hours if available)[m
+[32m+[m[32m    recent_cutoff = df['timestamp'].max() - timedelta(hours=24)[m
+[32m+[m[32m    recent_data = df[df['timestamp'] > recent_cutoff][m
+[32m+[m[32m    recent_trends = {}[m
+[32m+[m[32m    if not recent_data.empty:[m
+[32m+[m[32m        recent_stats = recent_data.groupby('room').agg({[m
+[32m+[m[32m            'temperature': 'mean',[m
+[32m+[m[32m            'co2': 'mean',[m
+[32m+[m[32m            'humidity': 'mean'[m
+[32m+[m[32m        }).round(2)[m
+[32m+[m[32m        recent_trends = recent_stats.to_dict('index')[m
+[32m+[m[41m    [m
+[32m+[m[32m    return {[m
+[32m+[m[32m        'overview': {[m
+[32m+[m[32m            'rooms': rooms,[m
+[32m+[m[32m            'room_count': room_count,[m
+[32m+[m[32m            'date_range': date_range,[m
+[32m+[m[32m            'total_hours': round(total_hours, 1),[m
+[32m+[m[32m            'data_points_per_room': data_points_per_room.to_dict()[m
+[32m+[m[32m        },[m
+[32m+[m[32m        'room_stats': room_stats,[m
+[32m+[m[32m        'hourly_patterns': hourly_patterns,[m
+[32m+[m[32m        'daily_patterns': daily_patterns,[m
+[32m+[m[32m        'time_of_day_patterns': time_of_day_patterns,[m
+[32m+[m[32m        'air_quality_distribution': air_quality_percentage,[m
+[32m+[m[32m        'anomalies': anomalies,[m
+[32m+[m[32m        'room_rankings': room_rankings,[m
+[32m+[m[32m        'recent_trends': recent_trends[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m@app.post("/ask")[m
+[32m+[m[32masync def ask_ai(query: Query):[m
+[32m+[m[32m    df = load_sensor_data()[m
+[32m+[m[32m    if df.empty:[m
+[32m+[m[32m        return {"answer": "No sensor data available."}[m
+[32m+[m
+[32m+[m[32m    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')[m
+[32m+[m[32m    df = df.dropna(subset=['temperature', 'co2', 'humidity', 'timestamp'])[m
+[32m+[m
+[32m+[m[32m    if df.empty:[m
+[32m+[m[32m        return {"answer": "No valid sensor data after cleaning."}[m
+[32m+[m
+[32m+[m[32m    analysis = generate_comprehensive_analysis(df)[m
+[32m+[m
+[32m+[m[32m    if query.return_tables:[m
+[32m+[m[32m        # Return key tables as JSON and markdown[m
+[32m+[m[32m        room_stats_json = analysis['room_stats'].to_dict('records')[m
+[32m+[m[32m        hourly_patterns_json = analysis['hourly_patterns'].to_dict('records')[m
+[32m+[m[32m        daily_patterns_json = analysis['daily_patterns'].to_dict('records')[m
+[32m+[m[32m        time_of_day_patterns_json = analysis['time_of_day_patterns'].to_dict('records')[m
+[32m+[m[32m        air_quality_json = analysis['air_quality_distribution'].to_dict('records')[m
+[32m+[m[32m        room_stats_md = df_to_markdown_table(analysis['room_stats'], analysis['room_stats'].columns.tolist())[m
+[32m+[m
+[32m+[m[32m        return {[m
+[32m+[m[32m            "answer": "Tables returned as requested.",[m
+[32m+[m[32m            "tables": {[m
+[32m+[m[32m                "room_stats": room_stats_json,[m
+[32m+[m[32m                "hourly_patterns": hourly_patterns_json,[m
+[32m+[m[32m                "daily_patterns": daily_patterns_json,[m
+[32m+[m[32m                "time_of_day_patterns": time_of_day_patterns_json,[m
+[32m+[m[32m                "air_quality_distribution": air_quality_json,[m
+[32m+[m[32m                "room_stats_markdown": room_stats_md[m
+[32m+[m[32m            },[m
+[32m+[m[32m            "overview": analysis['overview'],[m
+[32m+[m[32m            "room_rankings": analysis['room_rankings'],[m
+[32m+[m[32m            "anomalies": analysis['anomalies'],[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m    # Else return AI text answer[m
+[32m+[m[32m    room_stats_table = df_to_markdown_table(analysis['room_stats'], analysis['room_stats'].columns.tolist())[m
+[32m+[m
+[32m+[m[32m    prompt = f"""You are an environmental data analyst. Answer questions about indoor air quality data concisely and clearly.[m
+[32m+[m
+[32m+[m[32m**DATA OVERVIEW:**[m
+[32m+[m[32mRooms: {analysis['overview']['rooms']} | Period: {analysis['overview']['date_range']} | Duration: {analysis['overview']['total_hours']}h[m
+[32m+[m
+[32m+[m[32m**KEY METRICS:**[m
+[32m+[m[32m{room_stats_table}[m
+[32m+[m
+[32m+[m[32m**ROOM RANKINGS:**[m
+[32m+[m[32m- Warmest: {analysis['room_rankings']['warmest']} | Coolest: {analysis['room_rankings']['coolest']}[m
+[32m+[m[32m- Highest CO2: {analysis['room_rankings']['highest_co2']} | Lowest CO2: {analysis['room_rankings']['lowest_co2']}[m
+[32m+[m[32m- Most Humid: {analysis['room_rankings']['most_humid']} | Least Humid: {analysis['room_rankings']['least_humid']}[m
+[32m+[m
+[32m+[m[32m**RECENT ISSUES:**[m
+[32m+[m[32m{chr(10).join(['• ' + anomaly for anomaly in analysis['anomalies'][:3]]) if analysis['anomalies'] else '• No major issues detected'}[m
+[32m+[m
+[32m+[m[32m**STANDARDS:** CO2: <400 excellent, 400-800 good, 800-1200 moderate, >1200 poor | Temp: 18-26°C comfort | Humidity: 30-70% optimal[m
+[32m+[m
+[32m+[m[32m**USER QUESTION:** {query.question}[m
+[32m+[m
+[32m+[m[32m**RESPONSE REQUIREMENTS:**[m
+[32m+[m[32m- Keep answer under 4 sentences[m
+[32m+[m[32m- Lead with the direct answer[m
+[32m+[m[32m- Include 1-2 specific data points[m
+[32m+[m[32m- Add one actionable recommendation if relevant[m
+[32m+[m[32m- Use simple language, avoid jargon[m
+[32m+[m
+[32m+[m[32mAnswer briefly and helpfully:"""[m
+[32m+[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        response = openai.ChatCompletion.create([m
+[32m+[m[32m            model="gpt-4",[m
+[32m+[m[32m            messages=[{"role": "user", "content": prompt}],[m
+[32m+[m[32m            temperature=0.2,[m
+[32m+[m[32m            max_tokens=300[m
+[32m+[m[32m        )[m
+[32m+[m[32m        answer = response.choices[0].message.content.strip()[m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        answer = f"OpenAI API error: {e}"[m
+[32m+[m
+[32m+[m[32m    return {"answer": answer}[m
+[32m+[m
+[32m+[m[32m@app.get("/debug_stats")[m
+[32m+[m[32masync def debug_stats():[m
+[32m+[m[32m    df = load_sensor_data()[m
+[32m+[m[32m    if df.empty:[m
+[32m+[m[32m        return {"error": "No sensor data available."}[m
+[32m+[m
+[32m+[m[32m    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')[m
+[32m+[m[32m    df = df.dropna(subset=['temperature', 'co2', 'humidity', 'timestamp'])[m
+[32m+[m
+[32m+[m[32m    if df.empty:[m
+[32m+[m[32m        return {"error": "No valid data after cleaning."}[m
+[32m+[m
+[32m+[m[32m    analysis = generate_comprehensive_analysis(df)[m
+[32m+[m[41m    [m
+[32m+[m[32m    return {[m
+[32m+[m[32m        "overview": analysis['overview'],[m
+[32m+[m[32m        "room_rankings": analysis['room_rankings'],[m
+[32m+[m[32m        "anomalies": analysis['anomalies'],[m
+[32m+[m[32m        "sample_stats": analysis['room_stats'].head().to_dict('records')[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m@app.get("/full_analysis")[m
+[32m+[m[32masync def full_analysis():[m
+[32m+[m[32m    """Endpoint to get complete analysis without AI interpretation"""[m
+[32m+[m[32m    df = load_sensor_data()[m
+[32m+[m[32m    if df.empty:[m
+[32m+[m[32m        return {"error": "No sensor data available."}[m
+[32m+[m
+[32m+[m[32m    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')[m
+[32m+[m[32m    df = df.dropna(subset=['temperature', 'co2', 'humidity', 'timestamp'])[m
+[32m+[m
+[32m+[m[32m    if df.empty:[m
+[32m+[m[32m        return {"error": "No valid data after cleaning."}[m
+[32m+[m
+[32m+[m[32m    analysis = generate_comprehensive_analysis(df)[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Convert DataFrames to dicts for JSON response[m
+[32m+[m[32m    for key in ['room_stats', 'hourly_patterns', 'daily_patterns', 'time_of_day_patterns', 'air_quality_distribution']:[m
+[32m+[m[32m        if key in analysis and hasattr(analysis[key], 'to_dict'):[m
+[32m+[m[32m            analysis[key] = analysis[key].to_dict('records')[m
+[32m+[m[41m    [m
+[32m+[m[32m    return analysis[m
+[32m+[m
+[32m+[m[32mif __name__ == "__main__":[m
+[32m+[m[32m    import uvicorn[m
+[32m+[m[32m    uvicorn.run(app, host="0.0.0.0", port=8000)[m
+[1mdiff --git a/backend/sensor_api.log b/backend/sensor_api.log[m
+[1mnew file mode 100644[m
+[1mindex 0000000..0a6abdd[m
+[1m--- /dev/null[m
+[1m+++ b/backend/sensor_api.log[m
+[36m@@ -0,0 +1,9 @@[m
+[32m+[m[32m2025-07-23 22:46:59,387 - main - INFO - Starting Sensor Data API[m
+[32m+[m[32m2025-07-23 22:46:59,387 - main - INFO - Loading fresh sensor data[m
+[32m+[m[32m2025-07-23 22:46:59,388 - main - INFO - Found 4 NDJSON files[m
+[32m+[m[32m2025-07-23 22:47:01,860 - main - INFO - Loaded 5380 sensor readings from 4 rooms[m
+[32m+[m[32m2025-07-23 22:47:01,861 - main - INFO - Initial data cache loaded successfully[m
+[32m+[m[32m2025-07-23 22:47:17,650 - main - INFO - Processing query: what is average room temperature in Room 4 and 2?...[m
+[32m+[m[32m2025-07-23 22:47:17,650 - main - INFO - Returning cached sensor data[m
+[32m+[m[32m2025-07-23 22:47:17,651 - main - ERROR - Unexpected error in ask_ai: Invalid comparison between dtype=datetime64[ns, UTC] and datetime[m
+[32m+[m[32m2025-07-23 22:52:18,469 - main - INFO - Shutting down Sensor Data API[m
+[1mdiff --git a/backend/sensor_data/sensor_data_Room 1.ndjson b/backend/sensor_data/sensor_data_Room 1.ndjson[m
+[1mnew file mode 100644[m
+[1mindex 0000000..89593d2[m
+[1m--- /dev/null[m
+[1m+++ b/backend/sensor_data/sensor_data_Room 1.ndjson[m	
+[36m@@ -0,0 +1,1345 @@[m
+[32m+[m[32m{"timestamp": "2025-07-03T13:21:58.171539+00:00", "CO2 (ppm)": 753.28, "Relative Humidity (%)": 35.8, "Temperature (\u00b0C)": 23.13}[m
+[32m+[m[32m{"timestamp": "2025-07-03T13:36:58.171539+00:00", "CO2 (ppm)": 955.72, "Relative Humidity (%)": 57.85, "Temperature (\u00b0C)": 23.53}[m
+[32m+[m[32m{"timestamp": "2025-07-03T13:51:58.171539+00:00", "CO2 (ppm)": 566.9, "Relative Humidity (%)": 53.83, "Temperature (\u00b0C)": 21.71}[m
+[32m+[m[32m{"timestamp": "2025-07-03T14:06:58.171539+00:00", "CO2 (ppm)": 849.97, "Relative Humidity (%)": 31.39, "Temperature (\u00b0C)": 25.68}[m
+[32m+[m[32m{"timestamp": "2025-07-03T14:21:58.171539+00:00", "CO2 (ppm)": 427.32, "Relative Humidity (%)": 56.84, "Temperature (\u00b0C)": 25.06}[m
+[32m+[m[32m{"timestamp": "2025-07-03T14:36:58.171539+00:00", "CO2 (ppm)": 802.08, "Relative Humidity (%)": 40.67, "Temperature (\u00b0C)": 21.41}[m
+[32m+[m[32m{"timestamp": "2025-07-03T14:51:58.171539+00:00", "CO2 (ppm)": 816.98, "Relative Humidity (%)": 59.53, "Temperature (\u00b0C)": 23.37}[m
+[32m+[m[32m{"timestamp": "2025-07-03T15:06:58.171539+00:00", "CO2 (ppm)": 408.2, "Relative Humidity (%)": 57.47, "Temperature (\u00b0C)": 23.88}[m
+[32m+[m[32m{"timestamp": "2025-07-03T15:21:58.171539+00:00", "CO2 (ppm)": 966.51, "Relative Humidity (%)": 45.75, "Temperature (\u00b0C)": 23.06}[m
+[32m+[m[32m{"timestamp": "2025-07-03T15:36:58.171539+00:00", "CO2 (ppm)": 711.88, "Relative Humidity (%)": 42.74, "Temperature (\u00b0C)": 24.05}[m
+[32m+[m[32m{"timestamp": "2025-07-03T15:51:58.171539+00:00", "CO2 (ppm)": 468.48, "Relative Humidity (%)": 42.77, "Temperature (\u00b0C)": 21.91}[m
+[32m+[m[32m{"timestamp": "2025-07-03T16:06:58.171539+00:00", "CO2 (ppm)": 531.37, "Relative Humidity (%)": 56.22, "Temperature (\u00b0C)": 25.77}[m
+[32m+[m[32m{"timestamp": "2025-07-03T16:21:58.171539+00:00", "CO2 (ppm)": 527.69, "Relative Humidity (%)": 40.13, "Temperature (\u00b0C)": 20.73}[m
+[32m+[m[32m{"timestamp": "2025-07-03T16:36:58.171539+00:00", "CO2 (ppm)": 738.49, "Relative Humidity (%)": 38.82, "Temperature (\u00b0C)": 23.25}[m
+[32m+[m[32m{"timestamp": "2025-07-03T16:51:58.171539+00:00", "CO2 (ppm)": 783.33, "Relative Humidity (%)": 56.25, "Temperature (\u00b0C)": 21.65}[m
+[32m+[m[32m{"timestamp": "2025-07-03T17:06:58.171539+00:00", "CO2 (ppm)": 501.93, "Relative Humidity (%)": 33.78, "Temperature (\u00b0C)": 24.02}[m
+[32m+[m[32m{"timestamp": "2025-07-03T17:21:58.171539+00:00", "CO2 (ppm)": 908.53, "Relative Humidity (%)": 40.7, "Temperature (\u00b0C)": 21.28}[m
+[32m+[m[32m{"timestamp": "2025-07-03T17:36:58.171539+00:00", "CO2 (ppm)": 949.32, "Relative Humidity (%)": 31.67, "Temperature (\u00b0C)": 25.76}[m
+[32m+[m[32m{"timestamp": "2025-07-03T17:51:58.171539+00:00", "CO2 (ppm)": 938.9, "Relative Humidity (%)": 59.46, "Temperature (\u00b0C)": 24.98}[m
+[32m+[m[32m{"timestamp": "2025-07-03T18:06:58.171539+00:00", "CO2 (ppm)": 509.35, "Relative Humidity (%)": 45.04, "Temperature (\u00b0C)": 23.84}[m
+[32m+[m[32m{"timestamp": "2025-07-03T18:21:58.171539+00:00", "CO2 (ppm)": 942.96, "Relative Humidity (%)": 43.79, "Temperature (\u00b0C)": 23.17}[m
+[32m+[m[32m{"timestamp": "2025-07-03T18:36:58.171539+00:00", "CO2 (ppm)": 652.51, "Relative Humidity (%)": 45.74, "Temperature (\u00b0C)": 21.92}[m
+[32m+[m[32m{"timestamp": "2025-07-03T18:51:58.171539+00:00", "CO2 (ppm)": 495.32, "Relative Humidity (%)": 33.09, "Temperature (\u00b0C)": 22.83}[m
+[32m+[m[32m{"timestamp": "2025-07-03T19:06:58.171539+00:00", "CO2 (ppm)": 718.99, "Relative Humidity (%)": 42.9, "Temperature (\u00b0C)": 20.57}[m
+[32m+[m[32m{"timestamp": "2025-07-03T19:21:58.171539+00:00", "CO2 (ppm)": 747.77, "Relative Humidity (%)": 36.06, "Temperature (\u00b0C)": 22.32}[m
+[32m+[m[32m{"timestamp": "2025-07-03T19:36:58.171539+00:00", "CO2 (ppm)": 652.48, "Relative Humidity (%)": 54.21, "Temperature (\u00b0C)": 23.75}[m
+[32m+[m[32m{"timestamp": "2025-07-03T19:51:58.171539+00:00", "CO2 (ppm)": 455.64, "Relative Humidity (%)": 52.12, "Temperature (\u00b0C)": 25.26}[m
+[32m+[m[32m{"timestamp": "2025-07-03T20:06:58.171539+00:00", "CO2 (ppm)": 533.97, "Relative Humidity (%)": 36.93, "Temperature (\u00b0C)": 24.2}[m
+[32m+[m[32m{"timestamp": "2025-07-03T20:21:58.171539+00:00", "CO2 (ppm)": 685.16, "Relative Humidity (%)": 31.75, "Temperature (\u00b0C)": 22.1}[m
+[32m+[m[32m{"timestamp": "2025-07-03T20:36:58.171539+00:00", "CO2 (ppm)": 764.61, "Relative Humidity (%)": 34.54, "Temperature (\u00b0C)": 22.45}[m
+[32m+[m[32m{"timestamp": "2025-07-03T20:51:58.171539+00:00", "CO2 (ppm)": 971.67, "Relative Humidity (%)": 50.08, "Temperature (\u00b0C)": 20.43}[m
+[32m+[m[32m{"timestamp": "2025-07-03T21:06:58.171539+00:00", "CO2 (ppm)": 725.6, "Relative Humidity (%)": 41.37, "Temperature (\u00b0C)": 24.66}[m
+[32m+[m[32m{"timestamp": "2025-07-03T21:21:58.171539+00:00", "CO2 (ppm)": 477.37, "Relative Humidity (%)": 36.86, "Temperature (\u00b0C)": 25.69}[m
+[32m+[m[32m{"timestamp": "2025-07-03T21:36:58.171539+00:00", "CO2 (ppm)": 923.18, "Relative Humidity (%)": 47.35, "Temperature (\u00b0C)": 24.86}[m
+[32m+[m[32m{"timestamp": "2025-07-03T21:51:58.171539+00:00", "CO2 (ppm)": 652.45, "Relative Humidity (%)": 43.54, "Temperature (\u00b0C)": 23.35}[m
+[32m+[m[32m{"timestamp": "2025-07-03T22:06:58.171539+00:00", "CO2 (ppm)": 922.4, "Relative Humidity (%)": 34.72, "Temperature (\u00b0C)": 25.25}[m
+[32m+[m[32m{"timestamp": "2025-07-03T22:21:58.171539+00:00", "CO2 (ppm)": 593.15, "Relative Humidity (%)": 47.29, "Temperature (\u00b0C)": 21.79}[m
+[32m+[m[32m{"timestamp": "2025-07-03T22:36:58.171539+00:00", "CO2 (ppm)": 492.37, "Relative Humidity (%)": 59.26, "Temperature (\u00b0C)": 22.35}[m
+[32m+[m[32m{"timestamp": "2025-07-03T22:51:58.171539+00:00", "CO2 (ppm)": 534.86, "Relative Humidity (%)": 37.99, "Temperature (\u00b0C)": 25.4}[m
+[32m+[m[32m{"timestamp": "2025-07-03T23:06:58.171539+00:00", "CO2 (ppm)": 473.18, "Relative Humidity (%)": 53.05, "Temperature (\u00b0C)": 20.7}[m
+[32m+[m[32m{"timestamp": "2025-07-03T23:21:58.171539+00:00", "CO2 (ppm)": 808.48, "Relative Humidity (%)": 58.88, "Temperature (\u00b0C)": 22.92}[m
+[32m+[m[32m{"timestamp": "2025-07-03T23:36:58.171539+00:00", "CO2 (ppm)": 631.31, "Relative Humidity (%)": 54.56, "Temperature (\u00b0C)": 21.68}[m
+[32m+[m[32m{"timestamp": "2025-07-03T23:51:58.171539+00:00", "CO2 (ppm)": 555.16, "Relative Humidity (%)": 51.98, "Temperature (\u00b0C)": 25.51}[m
+[32m+[m[32m{"timestamp": "2025-07-04T00:06:58.171539+00:00", "CO2 (ppm)": 412.98, "Relative Humidity (%)": 40.29, "Temperature (\u00b0C)": 22.09}[m
+[32m+[m[32m{"timestamp": "2025-07-04T00:21:58.171539+00:00", "CO2 (ppm)": 825.31, "Relative Humidity (%)": 42.94, "Temperature (\u00b0C)": 24.54}[m
+[32m+[m[32m{"timestamp": "2025-07-04T00:36:58.171539+00:00", "CO2 (ppm)": 852.94, "Relative Humidity (%)": 35.52, "Temperature (\u00b0C)": 21.69}[m
+[32m+[m[32m{"timestamp": "2025-07-04T00:51:58.171539+00:00", "CO2 (ppm)": 779.66, "Relative Humidity (%)": 53.04, "Temperature (\u00b0C)": 20.88}[m
+[32m+[m[32m{"timestamp": "2025-07-04T01:06:58.171539+00:00", "CO2 (ppm)": 787.26, "Relative Humidity (%)": 53.29, "Temperature (\u00b0C)": 24.57}[m
+[32m+[m[32m{"timestamp": "2025-07-04T01:21:58.171539+00:00", "CO2 (ppm)": 448.85, "Relative Humidity (%)": 42.79, "Temperature (\u00b0C)": 21.54}[m
+[32m+[m[32m{"timestamp": "2025-07-04T01:36:58.171539+00:00", "CO2 (ppm)": 568.34, "Relative Humidity (%)": 33.25, "Temperature (\u00b0C)": 25.75}[m
+[32m+[m[32m{"timestamp": "2025-07-04T01:51:58.171539+00:00", "CO2 (ppm)": 839.95, "Relative Humidity (%)": 34.92, "Temperature (\u00b0C)": 22.6}[m
+[32m+[m[32m{"timestamp": "2025-07-04T02:06:58.171539+00:00", "CO2 (ppm)": 550.34, "Relative Humidity (%)": 30.57, "Temperature (\u00b0C)": 22.28}[m
+[32m+[m[32m{"timestamp": "2025-07-04T02:21:58.171539+00:00", "CO2 (ppm)": 674.59, "Relative Humidity (%)": 56.22, "Temperature (\u00b0C)": 24.16}[m
+[32m+[m[32m{"timestamp": "2025-07-04T02:36:58.171539+00:00", "CO2 (ppm)": 574.65, "Relative Humidity (%)": 31.19, "Temperature (\u00b0C)": 25.37}[m
+[32m+[m[32m{"timestamp": "2025-07-04T02:51:58.171539+00:00", "CO2 (ppm)": 627.5, "Relative Humidity (%)": 39.29, "Temperature (\u00b0C)": 21.03}[m
+[32m+[m[32m{"timestamp": "2025-07-04T03:06:58.171539+00:00", "CO2 (ppm)": 963.75, "Relative Humidity (%)": 45.51, "Temperature (\u00b0C)": 25.83}[m
+[32m+[m[32m{"timestamp": "2025-07-04T03:21:58.171539+00:00", "CO2 (ppm)": 525.68, "Relative Humidity (%)": 30.45, "Temperature (\u00b0C)": 24.28}[m
+[32m+[m[32m{"timestamp": "2025-07-04T03:36:58.171539+00:00", "CO2 (ppm)": 696.55, "Relative Humidity (%)": 56.85, "Temperature (\u00b0C)": 25.76}[m
+[32m+[m[32m{"timestamp": "2025-07-04T03:51:58.171539+00:00", "CO2 (ppm)": 718.68, "Relative Humidity (%)": 39.13, "Temperature (\u00b0C)": 23.93}[m
+[32m+[m[32m{"timestamp": "2025-07-04T04:06:58.171539+00:00", "CO2 (ppm)": 954.99, "Relative Humidity (%)": 53.01, "Temperature (\u00b0C)": 23.57}[m
+[32m+[m[32m{"timestamp": "2025-07-04T04:21:58.171539+00:00", "CO2 (ppm)": 843.12, "Relative Humidity (%)": 45.87, "Temperature (\u00b0C)": 24.3}[m
+[32m+[m[32m{"timestamp": "2025-07-04T04:36:58.171539+00:00", "CO2 (ppm)": 460.76, "Relative Humidity (%)": 50.78, "Temperature (\u00b0C)": 23.76}[m
+[32m+[m[32m{"timestamp": "2025-07-04T04:51:58.171539+00:00", "CO2 (ppm)": 686.52, "Relative Humidity (%)": 36.86, "Temperature (\u00b0C)": 21.5}[m
+[32m+[m[32m{"timestamp": "2025-07-04T05:06:58.171539+00:00", "CO2 (ppm)": 913.6, "Relative Humidity (%)": 44.51, "Temperature (\u00b0C)": 23.34}[m
+[32m+[m[32m{"timestamp": "2025-07-04T05:21:58.171539+00:00", "CO2 (ppm)": 963.79, "Relative Humidity (%)": 52.53, "Temperature (\u00b0C)": 23.42}[m
+[32m+[m[32m{"timestamp": "2025-07-04T05:36:58.171539+00:00", "CO2 (ppm)": 464.17, "Relative Humidity (%)": 45.01, "Temperature (\u00b0C)": 25.66}[m
+[32m+[m[32m{"timestamp": "2025-07-04T05:51:58.171539+00:00", "CO2 (ppm)": 404.05, "Relative Humidity (%)": 32.85, "Temperature (\u00b0C)": 22.05}[m
+[32m+[m[32m{"timestamp": "2025-07-04T06:06:58.171539+00:00", "CO2 (ppm)": 522.11, "Relative Humidity (%)": 53.1, "Temperature (\u00b0C)": 23.09}[m
+[32m+[m[32m{"timestamp": "2025-07-04T06:21:58.171539+00:00", "CO2 (ppm)": 473.93, "Relative Humidity (%)": 32.38, "Temperature (\u00b0C)": 21.38}[m
+[32m+[m[32m{"timestamp": "2025-07-04T06:36:58.171539+00:00", "CO2 (ppm)": 605.04, "Relative Humidity (%)": 52.0, "Temperature (\u00b0C)": 22.91}[m
+[32m+[m[32m{"timestamp": "2025-07-04T06:51:58.171539+00:00", "CO2 (ppm)": 682.48, "Relative Humidity (%)": 39.8, "Temperature (\u00b0C)": 24.16}[m
+[32m+[m[32m{"timestamp": "2025-07-04T07:06:58.171539+00:00", "CO2 (ppm)": 743.09, "Relative Humidity (%)": 42.33, "Temperature (\u00b0C)": 24.88}[m
+[32m+[m[32m{"timestamp": "2025-07-04T07:21:58.171539+00:00", "CO2 (ppm)": 623.43, "Relative Humidity (%)": 41.9, "Temperature (\u00b0C)": 20.44}[m
+[32m+[m[32m{"timestamp": "2025-07-04T07:36:58.171539+00:00", "CO2 (ppm)": 954.45, "Relative Humidity (%)": 48.34, "Temperature (\u00b0C)": 20.56}[m
+[32m+[m[32m{"timestamp": "2025-07-04T07:51:58.171539+00:00", "CO2 (ppm)": 980.29, "Relative Humidity (%)": 33.07, "Temperature (\u00b0C)": 24.06}[m
+[32m+[m[32m{"timestamp": "2025-07-04T08:06:58.171539+00:00", "CO2 (ppm)": 698.08, "Relative Humidity (%)": 46.36, "Temperature (\u00b0C)": 20.98}[m
+[32m+[m[32m{"timestamp": "2025-07-04T08:21:58.171539+00:00", "CO2 (ppm)": 978.27, "Relative Humidity (%)": 58.44, "Temperature (\u00b0C)": 24.92}[m
+[32m+[m[32m{"timestamp": "2025-07-04T08:36:58.171539+00:00", "CO2 (ppm)": 508.94, "Relative Humidity (%)": 41.86, "Temperature (\u00b0C)": 20.93}[m
+[32m+[m[32m{"timestamp": "2025-07-04T08:51:58.171539+00:00", "CO2 (ppm)": 455.55, "Relative Humidity (%)": 59.32, "Temperature (\u00b0C)": 24.39}[m
+[32m+[m[32m{"timestamp": "2025-07-04T09:06:58.171539+00:00", "CO2 (ppm)": 934.48, "Relative Humidity (%)": 52.77, "Temperature (\u00b0C)": 22.52}[m
+[32m+[m[32m{"timestamp": "2025-07-04T09:21:58.171539+00:00", "CO2 (ppm)": 551.76, "Relative Humidity (%)": 35.55, "Temperature (\u00b0C)": 23.52}[m
+[32m+[m[32m{"timestamp": "2025-07-04T09:36:58.171539+00:00", "CO2 (ppm)": 675.91, "Relative Humidity (%)": 50.76, "Temperature (\u00b0C)": 24.15}[m
+[32m+[m[32m{"timestamp": "2025-07-04T09:51:58.171539+00:00", "CO2 (ppm)": 662.9, "Relative Humidity (%)": 32.06, "Temperature (\u00b0C)": 20.19}[m
+[32m+[m[32m{"timestamp": "2025-07-04T10:06:58.171539+00:00", "CO2 (ppm)": 527.87, "Relative Humidity (%)": 31.48, "Temperature (\u00b0C)": 20.93}[m
+[32m+[m[32m{"timestamp": "2025-07-04T10:21:58.171539+00:00", "CO2 (ppm)": 939.75, "Relative Humidity (%)": 32.64, "Temperature (\u00b0C)": 22.65}[m
+[32m+[m[32m{"timestamp": "2025-07-04T10:36:58.171539+00:00", "CO2 (ppm)": 687.69, "Relative Humidity (%)": 40.64, "Temperature (\u00b0C)": 23.52}[m
+[32m+[m[32m{"timestamp": "2025-07-04T10:51:58.171539+00:00", "CO2 (ppm)": 605.08, "Relative Humidity (%)": 35.79, "Temperature (\u00b0C)": 20.42}[m
+[32m+[m[32m{"timestamp": "2025-07-04T11:06:58.171539+00:00", "CO2 (ppm)": 997.12, "Relative Humidity (%)": 54.27, "Temperature (\u00b0C)": 20.24}[m
+[32m+[m[32m{"timestamp": "2025-07-04T11:21:58.171539+00:00", "CO2 (ppm)": 405.06, "Relative Humidity (%)": 43.37, "Temperature (\u00b0C)": 22.35}[m
+[32m+[m[32m{"timestamp": "2025-07-04T11:36:58.171539+00:00", "CO2 (ppm)": 944.78, "Relative Humidity (%)": 43.48, "Temperature (\u00b0C)": 25.0}[m
+[32m+[m[32m{"timestamp": "2025-07-04T11:51:58.171539+00:00", "CO2 (ppm)": 593.16, "Relative Humidity (%)": 36.65, "Temperature (\u00b0C)": 23.61}[m
+[32m+[m[32m{"timestamp": "2025-07-04T12:06:58.171539+00:00", "CO2 (ppm)": 469.85, "Relative Humidity (%)": 34.16, "Temperature (\u00b0C)": 24.74}[m
+[32m+[m[32m{"timestamp": "2025-07-04T12:21:58.171539+00:00", "CO2 (ppm)": 681.19, "Relative Humidity (%)": 41.1, "Temperature (\u00b0C)": 20.89}[m
+[32m+[m[32m{"timestamp": "2025-07-04T12:36:58.171539+00:00", "CO2 (ppm)": 789.35, "Relative Humidity (%)": 37.29, "Temperature (\u00b0C)": 21.28}[m
+[32m+[m[32m{"timestamp": "2025-07-04T12:51:58.171539+00:00", "CO2 (ppm)": 571.26, "Relative Humidity (%)": 55.68, "Temperature (\u00b0C)": 20.05}[m
+[32m+[m[32m{"timestamp": "2025-07-04T13:06:58.17

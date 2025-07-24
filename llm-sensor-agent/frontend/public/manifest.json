@@ -1,0 +1,45 @@
+{
+  "short_name": "AirAI",
+  "name": "Air Quality AI Analyst Dashboard",
+  "icons": [
+    {
+      "src": "icons/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "icons/logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0b3d91",
+  "background_color": "#e9f1fc",
+  "description": "An interactive AI dashboard for analyzing real-time indoor air quality trends using CO₂, temperature, and humidity sensors.",
+  "scope": "/",
+  "categories": ["utilities", "environment", "AI", "analytics", "health"],
+  "screenshots": [
+    {
+      "src": "screenshots/dashboard1.png",
+      "sizes": "1280x720",
+      "type": "image/png"
+    },
+    {
+      "src": "screenshots/dashboard2.png",
+      "sizes": "1280x720",
+      "type": "image/png"
+    }
+  ],
+  "lang": "en",
+  "dir": "ltr"
+}

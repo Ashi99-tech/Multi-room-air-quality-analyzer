@@ -1,0 +1,9 @@
+2025-07-23 22:46:59,387 - main - INFO - Starting Sensor Data API
+2025-07-23 22:46:59,387 - main - INFO - Loading fresh sensor data
+2025-07-23 22:46:59,388 - main - INFO - Found 4 NDJSON files
+2025-07-23 22:47:01,860 - main - INFO - Loaded 5380 sensor readings from 4 rooms
+2025-07-23 22:47:01,861 - main - INFO - Initial data cache loaded successfully
+2025-07-23 22:47:17,650 - main - INFO - Processing query: what is average room temperature in Room 4 and 2?...
+2025-07-23 22:47:17,650 - main - INFO - Returning cached sensor data
+2025-07-23 22:47:17,651 - main - ERROR - Unexpected error in ask_ai: Invalid comparison between dtype=datetime64[ns, UTC] and datetime
+2025-07-23 22:52:18,469 - main - INFO - Shutting down Sensor Data API

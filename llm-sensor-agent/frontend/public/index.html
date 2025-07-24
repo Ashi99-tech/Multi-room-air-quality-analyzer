@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b3d91" />
+    <meta
+      name="description"
+      content="An AI-powered dashboard to analyze indoor air quality trends using CO₂, temperature, and humidity sensors."
+    />
+    <title>IQS Analysis Tool</title>
+
+    <!-- Favicon & Manifest -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Styles -->
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        scroll-behavior: smooth;
+      }
+
+      html, body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(120deg, #f0f4f8, #e1f5fe);
+        color: #1e1e2f;
+        height: 100%;
+        overflow-x: hidden;
+      }
+
+      #root {
+        max-width: 1400px;
+        margin: 3rem auto;
+        padding: 2rem;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.75);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        animation: fadeIn 0.7s ease-in-out;
+      }
+
+      header {
+        text-align: center;
+        padding-bottom: 1.5rem;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        color: #0b3d91;
+        margin-bottom: 0.5rem;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+        color: #555;
+      }
+
+      button {
+        background: #0b3d91;
+        color: white;
+        padding: 10px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      button:hover {
+        background: #06306b;
+      }
+
+      noscript {
+        font-size: 1.1rem;
+        color: red;
+        background: #fffbe6;
+        padding: 1rem;
+        border: 2px solid #ffcc00;
+        border-radius: 8px;
+        max-width: 600px;
+        margin: 2rem auto;
+        text-align: center;
+      }
+
+      @keyframes fadeIn {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Smooth scrollbar for modern browsers */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #0b3d91;
+        border-radius: 8px;
+      }
+
+      /* Loader (optional if React is slow to mount) */
+      .loader {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #0b3d91;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: auto;
+        margin-top: 20vh;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div class="loader" id="loader"></div>
+    <div id="root" style="display: none;"></div>
+
+    <!-- Show React app after load -->
+    <script>
+      window.addEventListener('load', () => {
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('root').style.display = 'block';
+      });
+    </script>
+  </body>
+</html>

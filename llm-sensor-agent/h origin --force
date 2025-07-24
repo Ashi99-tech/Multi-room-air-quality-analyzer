@@ -1,0 +1,17 @@
+[33mcommit 9e6c3f8846a540b78478bfc103e5e8849fe3e4bb[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Ashi99-tech <ashiniwww@gmail.com>
+Date:   Thu Jul 24 15:26:03 2025 +0530
+
+    Remove .env with secrets and update .gitignore
+
+[33mcommit 4ceee21a90baf021666274f0b7ea20a8bec95fb6[m
+Author: Ashi99-tech <ashiniwww@gmail.com>
+Date:   Thu Jul 24 15:24:30 2025 +0530
+
+    Removed secret key and added .env to .gitignore
+
+[33mcommit 9cf6f7e70477cee4cb719ae46dd0ad13c9a5415f[m
+Author: Ashi99-tech <ashiniwww@gmail.com>
+Date:   Thu Jul 24 15:11:01 2025 +0530
+
+    Initial commit: FastAPI backend and React frontend

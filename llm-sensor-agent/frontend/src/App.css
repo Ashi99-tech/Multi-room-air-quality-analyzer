@@ -1,0 +1,15 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(to right, #e0f7fa, #e1f5fe);
+  color: #212121;
+}
+
+button {
+  transition: 0.3s ease-in-out;
+}
+
+button:hover {
+  background-color: #06306b !important;
+  transform: scale(1.05);
+}
