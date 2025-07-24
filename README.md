@@ -17,7 +17,7 @@ This project is an **AI-powered FastAPI web service** with a React frontend that
 ## 📁 Project Structure
 
 ```
-air-quality-ai-agent/
+llm-sensor-agent/
 ├── backend/
 │   ├── main.py                 # FastAPI backend with OpenAI integration
 │   ├── utils.py               # Dynamic data parsing and analysis
