@@ -106,14 +106,14 @@ The React app will open at: **http://localhost:3000**
 
 ## 📄 Example .jsonl File Format
 
-Each line in the `.jsonl` file (e.g., `RoomA.jsonl`) should look like:
+Each line in the `.jsonl` file (e.g., `Room1.jsonl`) should look like:
 
 ```json
 {"timestamp": "2025-07-24T14:00:00", "temperature": 26.4, "humidity": 45.2, "co2": 520}
 {"timestamp": "2025-07-24T15:00:00", "temperature": 27.1, "humidity": 44.0, "co2": 540}
 ```
 
-- Each file should be named by room (e.g., `RoomA.jsonl`, `RoomB.jsonl`)
+- Each file should be named by room (e.g., `Room1.jsonl`, `Room2.jsonl`)
 
 ---
 
