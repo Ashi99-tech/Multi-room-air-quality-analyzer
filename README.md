@@ -6,7 +6,7 @@ This project is an **AI-powered FastAPI web service** with a React frontend that
 
 ## ✨ Features
 
-- 💬 Natural language queries (e.g., "What was the average CO2 in Room A yesterday?")
+- 💬 Natural language queries (e.g., "What was the average CO2 in Room 1 yesterday?")
 - 📊 Sensor data analysis with time filtering and aggregation
 - 🧠 GPT-4 integration for intelligent data parsing and dynamic analysis
 - ⚡ Dynamic Python code execution for flexible analytics
